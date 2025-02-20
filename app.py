@@ -1,27 +1,47 @@
 import streamlit as st
 from PIL import Image
 import numpy as np
-from tensorflow.keras import models
+import tensorflow.lite as tflite  # Import TFLite
 
-
-
+# Function to load and preprocess image
 def load_image(image_file):
     img = Image.open(image_file)
     return img
 
-
+# Streamlit UI
 st.title("Cats and Dogs Classification")
 
-image_file = st.file_uploader("Upload Images", type=["png","jpg","jpeg"])
-model = models.load_model('model.tflite')
+# Upload Image
+image_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
+
+# Load the TFLite Model
+interpreter = tflite.Interpreter(model_path="model.tflite")
+interpreter.allocate_tensors()
+
+# Get input and output details
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
 if image_file is not None:
+    # Display Uploaded Image
     st.image(load_image(image_file), width=250)
+
+    # Preprocess Image
     image = Image.open(image_file)
     image = image.resize((224, 224))
-    image_arr = np.array(image.convert('RGB'))
-    image_arr.shape = (1, 224, 224, 3)
-    result = model.predict(image_arr)
+    image_arr = np.array(image.convert("RGB"), dtype=np.float32)
+    image_arr = np.expand_dims(image_arr, axis=0)  # Add batch dimension
+
+    # Set Input Tensor
+    interpreter.set_tensor(input_details[0]['index'], image_arr)
+
+    # Run Inference
+    interpreter.invoke()
+
+    # Get Predictions
+    result = interpreter.get_tensor(output_details[0]['index'])
     ind = np.argmax(result)
-    classes = ['Cat', 'Dog']
-    st.header(classes[ind])
+
+    # Class Labels
+    classes = ["Cat", "Dog"]
+    st.header(f"Prediction: {classes[ind]}")
