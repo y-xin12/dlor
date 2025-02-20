@@ -1,7 +1,7 @@
 import streamlit as st
 from PIL import Image
 import numpy as np
-import tensorflow.lite as tflite  # Import TFLite
+import tensorflow as tf
 
 # Function to load and preprocess image
 def load_image(image_file):
@@ -15,7 +15,7 @@ st.title("Cats and Dogs Classification")
 image_file = st.file_uploader("Upload an image", type=["png", "jpg", "jpeg"])
 
 # Load the TFLite Model
-interpreter = tflite.Interpreter(model_path="model.tflite")
+interpreter = tf.lite.Interpreter(model_path="model.tflite")
 interpreter.allocate_tensors()
 
 # Get input and output details
